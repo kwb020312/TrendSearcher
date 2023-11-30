@@ -66,6 +66,39 @@ app.get("/", async (req, res) => {
   }
 });
 
+// 관세법령 정보포털 스크래핑
+app.get("/test", async (req, res) => {
+  const browser = await puppeteer.launch({ headless: "new" });
+  const page = await browser.newPage();
+  page.setDefaultNavigationTimeout(90000);
+
+  // 접근주소
+  await page.goto("https://unipass.customs.go.kr/clip/index.do");
+
+  // 검색 기능 창에 검색어 입력
+  // 검색창 선택자: #uniSrchText2
+  await page.type("#uniSrchText2", "720110");
+
+  // 검색 실행 후, 페이지 로드를 기다립니다.
+  // 검색버튼 선택자: #btnHsSearch
+  await Promise.all([
+    page.$eval("#btnHsSearch", (el) => el.click()),
+    page.waitForNavigation({ waitUntil: "load" }),
+  ]);
+
+  await page.evaluate(() => {
+    let element = document.getElementById("quickmenu");
+    if (element) element.parentNode.removeChild(element);
+  });
+
+  // 결과물 캡처
+  await page.screenshot({ path: "./assets/result/result.png", fullPage: true });
+
+  await browser.close();
+
+  res.status(200).send("사진 저장에 성공했습니다.");
+});
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
